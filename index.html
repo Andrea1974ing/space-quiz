@@ -531,6 +531,23 @@
       else renderQuestion();
     });
 
+    document.addEventListener("keydown", event => {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) return;
+      const interactiveSelector = "button, input, select, textarea, a[href], summary, [contenteditable]:not([contenteditable='false']), [role], [tabindex]:not([tabindex='-1'])";
+      const focusedControl = [event.target, document.activeElement].some(target =>
+        target instanceof Element && target.closest(interactiveSelector)
+      );
+      if (focusedControl) return;
+
+      if (/^[1-4]$/.test(event.key) && !answered) {
+        event.preventDefault();
+        selectAnswer(Number(event.key) - 1);
+      } else if (event.key === "Enter" && answered) {
+        event.preventDefault();
+        nextButton.click();
+      }
+    });
+
     document.querySelector("#restart").addEventListener("click", () => {
       questionIndex = 0;
       score = 0;
