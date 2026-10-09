@@ -280,6 +280,47 @@
     }
 
     .final-score strong { color: var(--accent); font-size: 24px; }
+
+    .review {
+      margin: 0 0 25px;
+      text-align: left;
+    }
+
+    .review h2 {
+      margin-bottom: 12px;
+      font-size: 18px;
+      letter-spacing: -.02em;
+    }
+
+    .review-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .review-item {
+      padding: 13px 15px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface-soft);
+    }
+
+    .review-question {
+      margin: 0 0 8px;
+      font-weight: 750;
+    }
+
+    .review-answer, .review-fact {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .review-answer strong { color: var(--wrong); }
+    .review-answer.correct-answer strong { color: var(--correct); }
+
     .result .restart { display: block; margin: 0 auto; }
     .footer { margin: 17px 0 0; color: var(--muted); font-size: 12px; text-align: center; }
     [hidden] { display: none !important; }
@@ -353,6 +394,10 @@
         <h1 id="result-title">The stars are yours!</h1>
         <p class="result-copy" id="result-copy"></p>
         <div class="final-score"><strong id="final-score">0/10</strong><span>correct answers</span></div>
+        <section class="review" id="review" aria-labelledby="review-title" hidden>
+          <h2 id="review-title">Answers to explore</h2>
+          <ol class="review-list" id="review-list"></ol>
+        </section>
         <button class="restart" id="restart" type="button">Explore again <span aria-hidden="true">↻</span></button>
       </div>
     </section>
@@ -385,9 +430,12 @@
     const scoreOutput = document.querySelector("#score");
     const feedback = document.querySelector("#feedback");
     const nextButton = document.querySelector("#next");
+    const review = document.querySelector("#review");
+    const reviewList = document.querySelector("#review-list");
     let questionIndex = 0;
     let score = 0;
     let answered = false;
+    let missedAnswers = [];
 
     function renderQuestion() {
       const current = questions[questionIndex];
@@ -428,6 +476,7 @@
         buttons[current.answer].classList.add("correct");
         feedback.textContent = `Not quite — ${current.fact}`;
         feedback.classList.add("bad");
+        missedAnswers.push({ question: current.question, selected: current.options[selectedIndex], correct: current.options[current.answer], fact: current.fact });
       }
       nextButton.disabled = false;
       nextButton.textContent = questionIndex === questions.length - 1 ? "See my results" : "Next question";
@@ -450,6 +499,28 @@
       document.querySelector("#result-title").textContent = title;
       document.querySelector("#result-copy").textContent = copy;
       document.querySelector("#final-score").textContent = `${score}/${questions.length}`;
+      reviewList.replaceChildren();
+      missedAnswers.forEach(missed => {
+        const item = document.createElement("li");
+        item.className = "review-item";
+        const question = document.createElement("p");
+        question.className = "review-question";
+        question.textContent = missed.question;
+        const selected = document.createElement("p");
+        selected.className = "review-answer";
+        selected.innerHTML = "<strong>Your answer:</strong> ";
+        selected.append(document.createTextNode(missed.selected));
+        const correct = document.createElement("p");
+        correct.className = "review-answer correct-answer";
+        correct.innerHTML = "<strong>Correct answer:</strong> ";
+        correct.append(document.createTextNode(missed.correct));
+        const fact = document.createElement("p");
+        fact.className = "review-fact";
+        fact.textContent = missed.fact;
+        item.append(question, selected, correct, fact);
+        reviewList.append(item);
+      });
+      review.hidden = missedAnswers.length === 0;
       document.querySelector("#restart").focus();
     }
 
@@ -480,6 +551,7 @@
     document.querySelector("#restart").addEventListener("click", () => {
       questionIndex = 0;
       score = 0;
+      missedAnswers = [];
       scoreOutput.textContent = "0";
       result.hidden = true;
       quiz.hidden = false;
